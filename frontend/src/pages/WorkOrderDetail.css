@@ -1,0 +1,249 @@
+.work-order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Header */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.detail-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.back-link:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.detail-date {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.detail-error {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Grid de info */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.plate-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-text);
+}
+
+.fault-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+/* Flujo de estados */
+.status-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 0 20px;
+  overflow-x: auto;
+}
+
+.status-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-border);
+  border: 2px solid var(--color-border);
+  transition: all 0.2s ease;
+}
+
+.status-step.past .status-dot {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.status-step.current .status-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
+}
+
+.status-step-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.status-step.current .status-step-label {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.status-step.past .status-step-label {
+  color: var(--color-success);
+}
+
+.status-connector {
+  height: 2px;
+  width: 40px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  margin-bottom: 24px;
+}
+
+.status-connector.past {
+  background: var(--color-success);
+}
+
+.status-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Items form */
+.item-form-wrapper {
+  padding: 20px 24px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.item-form .form-row {
+  margin-bottom: 12px;
+}
+
+.item-form .form-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Item type badges */
+.item-type-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.type-labor {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.type-part {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+/* Total */
+.order-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-top: 2px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.total-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.total-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.total-cell {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-flow {
+    padding: 8px 0 16px;
+  }
+
+  .status-connector {
+    width: 24px;
+  }
+}

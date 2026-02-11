@@ -1,0 +1,14 @@
+{
+  "name": "taller-motos-pavas",
+  "version": "1.0.0",
+  "description": "Sistema de control de taller de motos - PAVAS S.A.S",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "build:frontend": "cd frontend && npm run build"
+  }
+}

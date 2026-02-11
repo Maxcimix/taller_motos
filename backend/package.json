@@ -1,0 +1,21 @@
+{
+  "name": "taller-motos-backend",
+  "version": "1.0.0",
+  "description": "API REST para sistema de control de taller de motos - PAVAS S.A.S",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "mysql2": "^3.11.0",
+    "sequelize": "^6.37.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
