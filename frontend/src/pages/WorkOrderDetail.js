@@ -1,11 +1,10 @@
-'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { workOrdersAPI } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './WorkOrderDetail.css';
+import { useAuth } from '../context/AuthContext';
 
 const STATUS_TRANSITIONS = {
   RECIBIDA: ['DIAGNOSTICO', 'CANCELADA'],
@@ -33,7 +32,6 @@ function WorkOrderDetail() {
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState('');
 
-  // Form para nuevo item
   const [showItemForm, setShowItemForm] = useState(false);
   const [itemForm, setItemForm] = useState({
     type: 'MANO_OBRA',
@@ -44,6 +42,12 @@ function WorkOrderDetail() {
   const [itemLoading, setItemLoading] = useState(false);
   const [itemError, setItemError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(null);
+
+
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPagination, setHistoryPagination] = useState(null);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -56,16 +60,37 @@ function WorkOrderDetail() {
     }
   }, [id]);
 
+
+
+  const fetchHistory = useCallback(async (page = 1) => {
+    setHistoryLoading(true);
+    try {
+      const res = await workOrdersAPI.getHistory(id, page);
+      setHistory(res.data || []);
+      setHistoryPagination(res.pagination || null);
+      setHistoryPage(page);
+    } catch (err) {
+      console.error('Error cargando historial:', err.message);
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchOrder();
-  }, [fetchOrder]);
+    fetchHistory();
+  }, [fetchOrder, fetchHistory]);
 
+  // --- MODIFICADO: ahora pide nota y recarga historial ---
   const handleStatusChange = async (newStatus) => {
+    const note = window.prompt('Nota del cambio de estado (opcional):') || '';
     setStatusLoading(true);
     setStatusError('');
     try {
-      await workOrdersAPI.updateStatus(id, newStatus);
+      await workOrdersAPI.updateStatus(id, newStatus, note);
       await fetchOrder();
+      await fetchHistory();
     } catch (err) {
       setStatusError(err.message);
     } finally {
@@ -94,11 +119,11 @@ function WorkOrderDetail() {
     }
   };
 
-  const handleDeleteItem = async (itemId) => {  
+  const handleDeleteItem = async (itemId) => {
     if (!window.confirm('Esta seguro de eliminar este item?')) return;
     setDeleteLoading(itemId);
     try {
-      await workOrdersAPI.deleteItem(id, itemId)
+      await workOrdersAPI.deleteItem(id, itemId);
       await fetchOrder();
     } catch (err) {
       setItemError(err.message);
@@ -111,6 +136,18 @@ function WorkOrderDetail() {
     if (!dateStr) return '-';
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  // --- NUEVO: formateo de fecha/hora para historial ---
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString('es-CO', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const formatCurrency = (value) => {
@@ -159,7 +196,7 @@ function WorkOrderDetail() {
       {statusError && <div className="alert alert-error">{statusError}</div>}
 
       <div className="detail-grid">
-        {/* Informacion del vehiculo y cliente */}
+        {/* Informacion del vehiculo */}
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Informacion del Vehiculo</h2>
@@ -190,6 +227,7 @@ function WorkOrderDetail() {
           </div>
         </div>
 
+        {/* Informacion del cliente */}
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Informacion del Cliente</h2>
@@ -424,6 +462,85 @@ function WorkOrderDetail() {
             )}
           </div>
         )}
+      </div>
+
+      {/* --- NUEVO: Historial de Cambios de Estado --- */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="card-title">Historial de Cambios de Estado</h2>
+        </div>
+        <div className="card-body">
+          {historyLoading ? (
+            <LoadingSpinner text="Cargando historial..." />
+          ) : history.length > 0 ? (
+            <>
+              <div className="history-timeline">
+                {history.map((entry, index) => (
+                  <div key={entry.id} className="history-entry">
+                    <div className="history-dot" />
+                    {index < history.length - 1 && <div className="history-line" />}
+                    <div className="history-content">
+                      <div className="history-header">
+                        <span className="history-user">
+                          {entry.changedBy?.name || 'Usuario desconocido'}
+                        </span>
+                        <span className="history-date">
+                          {formatDateTime(entry.created_at)}
+                        </span>
+                      </div>
+                      <div className="history-status-change">
+                        {entry.from_status ? (
+                          <>
+                            <StatusBadge status={entry.from_status} />
+                            <span className="history-arrow">&rarr;</span>
+                            <StatusBadge status={entry.to_status} />
+                          </>
+                        ) : (
+                          <>
+                            <span>Orden creada como</span>
+                            <StatusBadge status={entry.to_status} />
+                          </>
+                        )}
+                      </div>
+                      {entry.note && (
+                        <div className="history-note">
+                          <strong>Nota:</strong> {entry.note}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Paginacion del historial */}
+              {historyPagination && historyPagination.totalPages > 1 && (
+                <div className="history-pagination">
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    disabled={historyPage <= 1}
+                    onClick={() => fetchHistory(historyPage - 1)}
+                  >
+                    Anterior
+                  </button>
+                  <span className="history-pagination-info">
+                    Pagina {historyPage} de {historyPagination.totalPages}
+                  </span>
+                  <button
+                    className="btn btn-sm btn-secondary"
+                    disabled={historyPage >= historyPagination.totalPages}
+                    onClick={() => fetchHistory(historyPage + 1)}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="table-empty">
+              <p>No hay registros de cambios de estado.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
