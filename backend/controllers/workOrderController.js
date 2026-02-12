@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import { WorkOrder, OrderItem, Bike, Client } from '../models/index.js';
+import { WorkOrder, OrderItem, Bike, Client, StatusHistory, User } from '../models/index.js';
 import { STATUS_TRANSITIONS } from '../models/WorkOrder.js';
 import { createError } from '../middleware/errorHandler.js';
 
@@ -126,29 +126,107 @@ export const getWorkOrderById = async (req, res, next) => {
 
 
 export const updateWorkOrderStatus = async (req, res, next) => {
+  const t = await sequelize.transaction();
   try {
-    const { status: newStatus } = req.body;
-    const workOrder = await WorkOrder.findByPk(req.params.id);
+    const { toStatus, note } = req.body;
+
+    if (!toStatus) {
+      await t.rollback();
+      throw createError(400, 'El campo "toStatus" es obligatorio.');
+    }
+
+    const workOrder = await WorkOrder.findByPk(req.params.id, { transaction: t });
 
     if (!workOrder) {
+      await t.rollback();
       throw createError(404, 'Orden de trabajo no encontrada.');
     }
 
     const currentStatus = workOrder.status;
+
+    if (currentStatus === toStatus) {
+      await t.rollback();
+      throw createError(400, `La orden ya se encuentra en estado "${currentStatus}".`);
+    }
+
+    if (currentStatus === 'ENTREGADA') {
+      await t.rollback();
+      throw createError(400, 'No se puede cambiar el estado de una orden ya entregada.');
+    }
+
     const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [];
 
-    if (!allowedTransitions.includes(newStatus)) {
+    if (!allowedTransitions.includes(toStatus)) {
+      await t.rollback();
       throw createError(
         400,
-        `Transicion de estado invalida: no se puede cambiar de "${currentStatus}" a "${newStatus}". ` +
+        `Transicion de estado invalida: no se puede cambiar de "${currentStatus}" a "${toStatus}". ` +
         `Transiciones permitidas desde "${currentStatus}": [${allowedTransitions.join(', ')}].`
       );
     }
 
-    workOrder.status = newStatus;
-    await workOrder.save();
+    if (req.user.role === 'MECANICO') {
+      const mecanicoAllowed = ['DIAGNOSTICO', 'EN_PROCESO', 'LISTA'];
+      if (!mecanicoAllowed.includes(toStatus)) {
+        await t.rollback();
+        throw createError(403, `Un mecanico no puede cambiar el estado a "${toStatus}".`);
+      }
+    }
+
+    workOrder.status = toStatus;
+    await workOrder.save({ transaction: t });
+
+    await StatusHistory.create({
+      work_order_id: workOrder.id,
+      from_status: currentStatus,
+      to_status: toStatus,
+      note: note || null,
+      changed_by_user_id: req.user.id,
+    }, { transaction: t });
+
+    await t.commit();
 
     return res.json(workOrder);
+  } catch (error) {
+    if (t && !t.finished) await t.rollback();
+    next(error);
+  }
+};
+
+export const getStatusHistory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { page = 1, pageSize = 50 } = req.query;
+
+    const workOrder = await WorkOrder.findByPk(id);
+    if (!workOrder) {
+      throw createError(404, 'Orden de trabajo no encontrada.');
+    }
+
+    const offset = (parseInt(page) - 1) * parseInt(pageSize);
+    const limit = parseInt(pageSize);
+
+    const { count, rows } = await StatusHistory.findAndCountAll({
+      where: { work_order_id: id },
+      include: [{
+        model: User,
+        as: 'changedBy',
+        attributes: ['id', 'name', 'email', 'role'],
+      }],
+      order: [['created_at', 'DESC']],
+      offset,
+      limit,
+    });
+
+    return res.json({
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        pageSize: limit,
+        totalPages: Math.ceil(count / limit),
+      },
+    });
   } catch (error) {
     next(error);
   }

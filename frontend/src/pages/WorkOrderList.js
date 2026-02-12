@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { workOrderService } from '../services/api';
+import { workOrdersAPI } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 import Pagination from '../components/Pagination';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -21,14 +21,14 @@ function WorkOrderList() {
     setLoading(true);
     setError('');
     try {
-      const res = await workOrderService.getAll({
+      const res = await workOrdersAPI.getAll({
         status: filters.status,
         plate: filters.plate,
         page: filters.page,
         pageSize: 10,
       });
-      setOrders(res.data.data);
-      setPagination(res.data.pagination);
+      setOrders(res.data);
+      setPagination(res.pagination);
     } catch (err) {
       setError(err.message);
     } finally {

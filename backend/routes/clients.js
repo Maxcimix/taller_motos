@@ -4,8 +4,11 @@ import {
   getClients,
   getClientById,
 } from '../controllers/clientController.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
+
+router.use(authenticate);
 
 router.post('/', createClient);
 router.get('/', getClients);

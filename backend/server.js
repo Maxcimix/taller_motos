@@ -5,6 +5,8 @@ import { sequelize } from './config/database.js';
 import clientRoutes from './routes/clients.js';
 import bikeRoutes from './routes/bikes.js';
 import workOrderRoutes from './routes/workOrders.js';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -14,7 +16,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Rutas
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/bikes', bikeRoutes);
 app.use('/api/work-orders', workOrderRoutes);

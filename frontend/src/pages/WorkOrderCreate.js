@@ -1,8 +1,6 @@
-'use client';
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { bikeService, clientService, workOrderService } from '../services/api';
+import { bikesAPI, clientsAPI, workOrdersAPI } from "../services/api";
 import Modal from '../components/Modal';
 import './WorkOrderCreate.css';
 
@@ -38,11 +36,11 @@ function WorkOrderCreate() {
     setError('');
     setSearchDone(false);
     try {
-      const res = await bikeService.getAll(plateSearch.trim());
-      setBikeResults(res.data);
+      const bikes = await bikesAPI.getAll(plateSearch.trim());
+      setBikeResults(Array.isArray(bikes) ? bikes : []);
       setSearchDone(true);
-      if (res.data.length === 1) {
-        setSelectedBike(res.data[0]);
+      if (Array.isArray(bikes) && bikes.length === 1) {
+        setSelectedBike(bikes[0]);
       }
     } catch (err) {
       setError(err.message);
@@ -69,23 +67,23 @@ function WorkOrderCreate() {
 
     try {
 
-      const clientRes = await clientService.create({
+      const clientRes = await clientsAPI.create({
         name: registerForm.clientName,
         phone: registerForm.clientPhone,
         email: registerForm.clientEmail || undefined,
       });
 
 
-      const bikeRes = await bikeService.create({
+      const bikeRes = await bikesAPI.create({
         placa: registerForm.bikePlaca,
         brand: registerForm.bikeBrand,
         model: registerForm.bikeModel,
         cylinder: registerForm.bikeCylinder ? parseInt(registerForm.bikeCylinder) : undefined,
-        client_id: clientRes.data.id,
+        client_id: clientRes.id,
       });
 
 
-      const fullBike = { ...bikeRes.data, client: clientRes.data };
+      const fullBike = { ...bikeRes, client: clientRes };
       setSelectedBike(fullBike);
       setPlateSearch(registerForm.bikePlaca);
       setShowRegisterModal(false);
@@ -107,33 +105,37 @@ function WorkOrderCreate() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedBike) {
-      setError('Debe seleccionar una moto.');
-      return;
-    }
-    if (!faultDescription.trim()) {
-      setError('La descripcion de la falla es obligatoria.');
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setLoading(true);
-    setError('');
+  if (!selectedBike || !selectedBike.id) {
+    setError('Debe seleccionar una moto válida.');
+    return;
+  }
 
-    try {
-      const res = await workOrderService.create({
-        moto_id: selectedBike.id,
-        entry_date: entryDate,
-        fault_description: faultDescription,
-      });
-      navigate(`/ordenes/${res.data.id}`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!faultDescription.trim()) {
+    setError('La descripcion de la falla es obligatoria.');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+
+  try {
+    const order = await workOrdersAPI.create({
+      moto_id: selectedBike.id,
+      entry_date: entryDate,
+      fault_description: faultDescription,
+    });
+
+    navigate(`/ordenes/${order.id}`);
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="work-order-create">
@@ -147,7 +149,7 @@ function WorkOrderCreate() {
       <form onSubmit={handleSubmit}>
         {error && <div className="alert alert-error">{error}</div>}
 
-        {}
+        { }
         <div className="card create-section">
           <div className="card-header">
             <h2 className="card-title">
@@ -272,7 +274,7 @@ function WorkOrderCreate() {
           </div>
         </div>
 
-        {}
+        { }
         <div className="card create-section">
           <div className="card-header">
             <h2 className="card-title">
@@ -307,7 +309,7 @@ function WorkOrderCreate() {
           </div>
         </div>
 
-        {}
+        { }
         <div className="form-actions">
           <button
             type="button"
@@ -326,7 +328,7 @@ function WorkOrderCreate() {
         </div>
       </form>
 
-      {}
+      { }
       <Modal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}

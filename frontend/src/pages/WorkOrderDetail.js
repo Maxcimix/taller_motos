@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { workOrderService } from '../services/api';
+import { workOrdersAPI } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './WorkOrderDetail.css';
@@ -47,8 +47,8 @@ function WorkOrderDetail() {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const res = await workOrderService.getById(id);
-      setOrder(res.data);
+      const res = await workOrdersAPI.getById(id);
+      setOrder(res);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -64,7 +64,7 @@ function WorkOrderDetail() {
     setStatusLoading(true);
     setStatusError('');
     try {
-      await workOrderService.updateStatus(id, newStatus);
+      await workOrdersAPI.updateStatus(id, newStatus);
       await fetchOrder();
     } catch (err) {
       setStatusError(err.message);
@@ -78,7 +78,7 @@ function WorkOrderDetail() {
     setItemLoading(true);
     setItemError('');
     try {
-      await workOrderService.addItem(id, {
+      await workOrdersAPI.addItem(id, {
         type: itemForm.type,
         description: itemForm.description,
         count: parseInt(itemForm.count),
@@ -94,11 +94,11 @@ function WorkOrderDetail() {
     }
   };
 
-  const handleDeleteItem = async (itemId) => {
+  const handleDeleteItem = async (itemId) => {  
     if (!window.confirm('Esta seguro de eliminar este item?')) return;
     setDeleteLoading(itemId);
     try {
-      await workOrderService.deleteItem(itemId);
+      await workOrdersAPI.deleteItem(id, itemId)
       await fetchOrder();
     } catch (err) {
       setItemError(err.message);
