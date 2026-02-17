@@ -1,29 +1,81 @@
+/* =============================================
+   WorkOrderCreate - Estilos completos
+   ============================================= */
+
 .work-order-create {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 720px;
+  gap: 24px;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
+/* Header */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+/* Secciones / Steps */
 .create-section {
+  border-radius: 12px;
   overflow: hidden;
 }
 
-.step-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: var(--color-primary);
-  color: #ffffff;
-  border-radius: 50%;
-  font-size: 14px;
-  font-weight: 600;
-  margin-right: 10px;
+.card-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: #fafbfc;
 }
 
-/* Busqueda */
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =============================================
+   Búsqueda de placa
+   ============================================= */
+
 .search-row {
   display: flex;
   gap: 12px;
@@ -31,170 +83,442 @@
 }
 
 .search-btn {
-  height: 42px;
   flex-shrink: 0;
+  height: 42px;
+  padding: 0 24px;
+  white-space: nowrap;
 }
 
+/* =============================================
+   Texto helper y links
+   ============================================= */
+
+.helper-text {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  padding: 14px 18px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  line-height: 1.8;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-primary, #6d28d9);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: all 0.15s;
+}
+
+.link-button:hover {
+  background: #ede9fe;
+  text-decoration: none;
+}
+
+/* =============================================
+   Sin resultados de búsqueda
+   ============================================= */
+
 .no-results {
-  margin-top: 16px;
-  padding: 16px;
-  background: var(--color-warning-light);
+  padding: 20px;
+  background: #fffbeb;
   border: 1px solid #fde68a;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .no-results p {
+  margin: 0;
   font-size: 14px;
-  color: var(--color-warning);
+  color: #92400e;
+  font-weight: 500;
 }
 
-/* Resultados de busqueda */
+.no-results-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.no-results-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.btn-new-client {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+}
+
+.btn-new-client:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.45);
+}
+
+.btn-existing-client {
+  background: #fff;
+  color: #374151;
+  border: 1.5px solid #d1d5db !important;
+}
+
+.btn-existing-client:hover {
+  background: #f9fafb;
+  border-color: #9ca3af !important;
+}
+
+/* =============================================
+   Resultados múltiples de búsqueda
+   ============================================= */
+
 .bike-results {
-  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .results-title {
   font-size: 13px;
+  font-weight: 500;
   color: var(--color-text-secondary);
-  margin-bottom: 8px;
+  margin: 0 0 4px 0;
 }
 
 .bike-result-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
+  gap: 14px;
   padding: 12px 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 14px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
   text-align: left;
-  margin-bottom: 8px;
-  transition: all 0.15s ease;
+  transition: all 0.15s;
+  width: 100%;
 }
 
 .bike-result-item:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: var(--color-primary, #6d28d9);
+  background: #faf5ff;
 }
 
 .result-client {
   margin-left: auto;
-  color: var(--color-text-secondary);
   font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
-/* Moto seleccionada */
+/* =============================================
+   Moto seleccionada
+   ============================================= */
+
 .selected-bike {
-  margin-top: 16px;
-  padding: 16px;
-  background: var(--color-success-light);
-  border: 1px solid #a7f3d0;
-  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1.5px solid #86efac;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .selected-bike-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #bbf7d0;
 }
 
 .selected-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-success);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selected-label::before {
+  content: '✓';
+  width: 20px;
+  height: 20px;
+  background: #16a34a;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .selected-bike-info {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0;
+  padding: 4px 0;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  padding: 12px 18px;
 }
 
 .info-label {
-  font-size: 12px;
-  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
 }
 
 .info-value {
   font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* =============================================
+   Formulario de la orden
+   ============================================= */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 13px;
   font-weight: 500;
-  color: var(--color-text);
+  color: var(--color-text-secondary, #6b7280);
 }
 
-.helper-text {
-  margin-top: 12px;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-control {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: #111827;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.link-button {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: inherit;
-  text-decoration: underline;
-  padding: 0;
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary, #6d28d9);
+  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.1);
 }
 
-.link-button:hover {
-  color: var(--color-primary-dark);
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
 }
 
-/* Acciones del formulario */
+/* =============================================
+   Acciones del formulario principal
+   ============================================= */
+
 .form-actions {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
 }
 
-/* Modal secciones */
+/* =============================================
+   Badge de placa
+   ============================================= */
+
+.plate-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+/* =============================================
+   Modal: section title
+   ============================================= */
+
 .modal-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 12px;
-  margin-top: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 20px 0 12px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.modal-section-title:first-of-type {
+.modal-section-title:first-child {
   margin-top: 0;
 }
 
 .modal-actions {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
+  gap: 10px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid #f1f5f9;
 }
 
-@media (max-width: 600px) {
-  .search-row {
-    flex-direction: column;
-    align-items: stretch;
+/* =============================================
+   Modal: Lista de clientes existentes
+   ============================================= */
+
+.existing-clients-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.no-clients-msg {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 20px;
+}
+
+.modal-loading {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  padding: 16px;
+}
+
+.existing-client-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f1f5f9;
+  border-left: 3px solid transparent;
+}
+
+.existing-client-item:last-child {
+  border-bottom: none;
+}
+
+.existing-client-item:hover {
+  background: #f8fafc;
+}
+
+.existing-client-item.selected {
+  background: #ede9fe;
+  border-left-color: var(--color-primary, #6d28d9);
+}
+
+.ec-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ec-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ec-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.ec-detail {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.ec-check {
+  color: var(--color-primary, #6d28d9);
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* =============================================
+   Responsive
+   ============================================= */
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
   }
 
-  .no-results {
+  .search-row {
     flex-direction: column;
-    text-align: center;
+  }
+
+  .search-btn {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .no-results-actions {
+    flex-direction: column;
+  }
+
+  .no-results-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }

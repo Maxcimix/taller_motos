@@ -1,26 +1,26 @@
-import React, { useState } from "react";
-import { authAPI } from "../services/api";
-import "./Login.css";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './Login.css';
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const data = await authAPI.login(email, password);
-      console.log("LOGIN RESPONSE:", data);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "/ordenes";
+      await login(email, password);
+      navigate('/ordenes');
     } catch (err) {
-      setError(err.message || "Error al iniciar sesion");
+      setError(err.message || 'Error al iniciar sesion');
     } finally {
       setLoading(false);
     }
@@ -29,18 +29,16 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <div className="login-header">
-          <h1>PAVAS S.A.S</h1>
-          <p>Taller de Motos - Sistema de Gestion</p>
-        </div>
+        <h1 className="login-title">PAVAS S.A.S</h1>
+        <p className="login-subtitle">Taller de Motos - Sistema de Gestion</p>
 
         <form onSubmit={handleSubmit} className="login-form">
-          {error && <div className="login-error">{error}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="email">Correo Electronico</label>
+            <label className="form-label">Correo Electronico</label>
             <input
-              id="email"
+              className="form-control"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -51,9 +49,9 @@ function Login() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Contrasena</label>
+            <label className="form-label">Contrasena</label>
             <input
-              id="password"
+              className="form-control"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -63,7 +61,7 @@ function Login() {
           </div>
 
           <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-            {loading ? "Ingresando..." : "Iniciar Sesion"}
+            {loading ? 'Ingresando...' : 'Iniciar Sesion'}
           </button>
         </form>
       </div>

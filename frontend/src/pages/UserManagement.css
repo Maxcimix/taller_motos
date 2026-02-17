@@ -1,0 +1,128 @@
+/* ============================================
+   Gestion de Usuarios - Estilos
+   ============================================ */
+
+.user-management {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.um-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Stats Cards */
+.um-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.um-stat-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.um-stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #3b5bf5;
+}
+
+.um-stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Table */
+.um-user-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.um-you-badge {
+  font-size: 11px;
+  background: #3b5bf5;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.um-role-select {
+  padding: 4px 8px;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.um-role-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.um-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.um-status-badge.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.um-status-badge.inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.row-inactive {
+  opacity: 0.5;
+}
+
+/* Create Form Modal */
+.um-create-form .form-group {
+  margin-bottom: 16px;
+}
+
+.um-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .um-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .um-stats {
+    grid-template-columns: 1fr;
+  }
+}

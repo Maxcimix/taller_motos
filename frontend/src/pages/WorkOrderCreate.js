@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { bikesAPI, clientsAPI, workOrdersAPI } from "../services/api";
 import Modal from '../components/Modal';
@@ -17,6 +17,7 @@ function WorkOrderCreate() {
   const [error, setError] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
 
+  // Modal registro nuevo cliente + moto
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerForm, setRegisterForm] = useState({
     clientName: '',
@@ -29,6 +30,40 @@ function WorkOrderCreate() {
   });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
+
+  // Modal asociar moto a cliente existente
+  const [showExistingClientModal, setShowExistingClientModal] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [existingBikeForm, setExistingBikeForm] = useState({
+    bikePlaca: '',
+    bikeBrand: '',
+    bikeModel: '',
+    bikeCylinder: '',
+  });
+  const [existingBikeLoading, setExistingBikeLoading] = useState(false);
+  const [existingBikeError, setExistingBikeError] = useState('');
+  const [clientsLoading, setClientsLoading] = useState(false);
+
+  // Cargar clientes al abrir modal de cliente existente
+  useEffect(() => {
+    if (showExistingClientModal) {
+      const fetchClients = async () => {
+        setClientsLoading(true);
+        try {
+          const data = await clientsAPI.getAll();
+          const list = Array.isArray(data) ? data : (data?.clients || data?.data || []);
+          setClients(list);
+        } catch (err) {
+          console.error('Error cargando clientes:', err);
+        } finally {
+          setClientsLoading(false);
+        }
+      };
+      fetchClients();
+    }
+  }, [showExistingClientModal]);
 
   const searchBike = async () => {
     if (!plateSearch.trim()) return;
@@ -60,19 +95,36 @@ function WorkOrderCreate() {
     setRegisterForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleCloseRegisterModal = () => {
+    setShowRegisterModal(false);
+    setRegisterError('');
+    setRegisterForm({
+      clientName: '', clientPhone: '', clientEmail: '',
+      bikePlaca: '', bikeBrand: '', bikeModel: '', bikeCylinder: '',
+    });
+  };
+
+  const handleCloseExistingModal = () => {
+    setShowExistingClientModal(false);
+    setExistingBikeError('');
+    setSelectedClient(null);
+    setClientSearch('');
+    setExistingBikeForm({ bikePlaca: '', bikeBrand: '', bikeModel: '', bikeCylinder: '' });
+  };
+
+  // Registrar nuevo cliente + moto
   const handleQuickRegister = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setRegisterLoading(true);
     setRegisterError('');
 
     try {
-
       const clientRes = await clientsAPI.create({
         name: registerForm.clientName,
         phone: registerForm.clientPhone,
         email: registerForm.clientEmail || undefined,
       });
-
 
       const bikeRes = await bikesAPI.create({
         placa: registerForm.bikePlaca,
@@ -82,60 +134,86 @@ function WorkOrderCreate() {
         client_id: clientRes.id,
       });
 
-
       const fullBike = { ...bikeRes, client: clientRes };
       setSelectedBike(fullBike);
       setPlateSearch(registerForm.bikePlaca);
-      setShowRegisterModal(false);
-
-
-      setRegisterForm({
-        clientName: '',
-        clientPhone: '',
-        clientEmail: '',
-        bikePlaca: '',
-        bikeBrand: '',
-        bikeModel: '',
-        bikeCylinder: '',
-      });
+      handleCloseRegisterModal();
     } catch (err) {
-      setRegisterError(err.message);
+      setRegisterError(err.message || 'Error al registrar. Verifica los datos.');
     } finally {
       setRegisterLoading(false);
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  // Registrar moto para cliente existente
+  const handleExistingClientBike = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  if (!selectedBike || !selectedBike.id) {
-    setError('Debe seleccionar una moto válida.');
-    return;
-  }
+    if (!selectedClient) {
+      setExistingBikeError('Debes seleccionar un cliente.');
+      return;
+    }
 
-  if (!faultDescription.trim()) {
-    setError('La descripcion de la falla es obligatoria.');
-    return;
-  }
+    setExistingBikeLoading(true);
+    setExistingBikeError('');
 
-  setLoading(true);
-  setError('');
+    try {
+      const bikeRes = await bikesAPI.create({
+        placa: existingBikeForm.bikePlaca,
+        brand: existingBikeForm.bikeBrand,
+        model: existingBikeForm.bikeModel,
+        cylinder: existingBikeForm.bikeCylinder ? parseInt(existingBikeForm.bikeCylinder) : undefined,
+        client_id: selectedClient.id,
+      });
 
-  try {
-    const order = await workOrdersAPI.create({
-      moto_id: selectedBike.id,
-      entry_date: entryDate,
-      fault_description: faultDescription,
-    });
+      const fullBike = { ...bikeRes, client: selectedClient };
+      setSelectedBike(fullBike);
+      setPlateSearch(existingBikeForm.bikePlaca);
+      handleCloseExistingModal();
+    } catch (err) {
+      setExistingBikeError(err.message || 'Error al registrar la moto.');
+    } finally {
+      setExistingBikeLoading(false);
+    }
+  };
 
-    navigate(`/ordenes/${order.id}`);
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    if (!selectedBike || !selectedBike.id) {
+      setError('Debe seleccionar una moto válida.');
+      return;
+    }
+
+    if (!faultDescription.trim()) {
+      setError('La descripcion de la falla es obligatoria.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const order = await workOrdersAPI.create({
+        moto_id: selectedBike.id,
+        entry_date: entryDate,
+        fault_description: faultDescription,
+      });
+      navigate(`/ordenes/${order.id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Clientes filtrados por búsqueda en modal
+  const filteredClients = clients.filter((c) =>
+    c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+    c.phone?.includes(clientSearch) ||
+    c.email?.toLowerCase().includes(clientSearch.toLowerCase())
+  );
 
   return (
     <div className="work-order-create">
@@ -149,7 +227,7 @@ const handleSubmit = async (e) => {
       <form onSubmit={handleSubmit}>
         {error && <div className="alert alert-error">{error}</div>}
 
-        { }
+        {/* PASO 1: Seleccionar Moto */}
         <div className="card create-section">
           <div className="card-header">
             <h2 className="card-title">
@@ -188,16 +266,28 @@ const handleSubmit = async (e) => {
             {searchDone && bikeResults.length === 0 && (
               <div className="no-results">
                 <p>No se encontro ninguna moto con la placa "{plateSearch}".</p>
-                <button
-                  type="button"
-                  className="btn btn-outline-primary btn-sm"
-                  onClick={() => {
-                    setRegisterForm((prev) => ({ ...prev, bikePlaca: plateSearch }));
-                    setShowRegisterModal(true);
-                  }}
-                >
-                  Registrar cliente y moto
-                </button>
+                <div className="no-results-actions">
+                  <button
+                    type="button"
+                    className="btn btn-new-client"
+                    onClick={() => {
+                      setRegisterForm((prev) => ({ ...prev, bikePlaca: plateSearch }));
+                      setShowRegisterModal(true);
+                    }}
+                  >
+                    + Registrar nuevo cliente y moto
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-existing-client"
+                    onClick={() => {
+                      setExistingBikeForm((prev) => ({ ...prev, bikePlaca: plateSearch }));
+                      setShowExistingClientModal(true);
+                    }}
+                  >
+                    Asociar a cliente existente
+                  </button>
+                </div>
               </div>
             )}
 
@@ -261,20 +351,28 @@ const handleSubmit = async (e) => {
 
             {!searchDone && !selectedBike && (
               <p className="helper-text">
-                Busque la moto por placa o{' '}
+                Busque la moto por placa,{' '}
                 <button
                   type="button"
                   className="link-button"
                   onClick={() => setShowRegisterModal(true)}
                 >
                   registre un nuevo cliente y moto
+                </button>
+                {' '}o{' '}
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => setShowExistingClientModal(true)}
+                >
+                  asocie una moto a un cliente existente
                 </button>.
               </p>
             )}
           </div>
         </div>
 
-        { }
+        {/* PASO 2: Datos de la Orden */}
         <div className="card create-section">
           <div className="card-header">
             <h2 className="card-title">
@@ -309,7 +407,6 @@ const handleSubmit = async (e) => {
           </div>
         </div>
 
-        { }
         <div className="form-actions">
           <button
             type="button"
@@ -328,33 +425,32 @@ const handleSubmit = async (e) => {
         </div>
       </form>
 
-      { }
+      {/* ============ MODAL: Nuevo cliente + moto ============ */}
       <Modal
         isOpen={showRegisterModal}
-        onClose={() => setShowRegisterModal(false)}
+        onClose={handleCloseRegisterModal}
         title="Registro rapido - Cliente y Moto"
       >
-        <form onSubmit={handleQuickRegister}>
+        <form onSubmit={handleQuickRegister} onClick={(e) => e.stopPropagation()}>
           {registerError && <div className="alert alert-error">{registerError}</div>}
 
           <h4 className="modal-section-title">Datos del Cliente</h4>
           <div className="form-group">
-            <label htmlFor="reg-name" className="form-label">Nombre *</label>
+            <label className="form-label">Nombre *</label>
             <input
-              id="reg-name"
               className="form-control"
               type="text"
               placeholder="Nombre completo"
               value={registerForm.clientName}
               onChange={(e) => handleRegisterChange('clientName', e.target.value)}
               required
+              autoFocus
             />
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="reg-phone" className="form-label">Telefono *</label>
+              <label className="form-label">Telefono *</label>
               <input
-                id="reg-phone"
                 className="form-control"
                 type="text"
                 placeholder="3001234567"
@@ -364,9 +460,8 @@ const handleSubmit = async (e) => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="reg-email" className="form-label">Email</label>
+              <label className="form-label">Email</label>
               <input
-                id="reg-email"
                 className="form-control"
                 type="email"
                 placeholder="correo@ejemplo.com"
@@ -379,9 +474,8 @@ const handleSubmit = async (e) => {
           <h4 className="modal-section-title">Datos de la Moto</h4>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="reg-placa" className="form-label">Placa *</label>
+              <label className="form-label">Placa *</label>
               <input
-                id="reg-placa"
                 className="form-control"
                 type="text"
                 placeholder="ABC123"
@@ -391,9 +485,8 @@ const handleSubmit = async (e) => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="reg-brand" className="form-label">Marca *</label>
+              <label className="form-label">Marca *</label>
               <input
-                id="reg-brand"
                 className="form-control"
                 type="text"
                 placeholder="Yamaha, Honda..."
@@ -405,9 +498,8 @@ const handleSubmit = async (e) => {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="reg-model" className="form-label">Modelo *</label>
+              <label className="form-label">Modelo *</label>
               <input
-                id="reg-model"
                 className="form-control"
                 type="text"
                 placeholder="FZ 2.0, CB 160..."
@@ -417,9 +509,8 @@ const handleSubmit = async (e) => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="reg-cylinder" className="form-label">Cilindraje</label>
+              <label className="form-label">Cilindraje</label>
               <input
-                id="reg-cylinder"
                 className="form-control"
                 type="number"
                 placeholder="150"
@@ -433,16 +524,138 @@ const handleSubmit = async (e) => {
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setShowRegisterModal(false)}
+              onClick={handleCloseRegisterModal}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={registerLoading}>
+              {registerLoading ? 'Registrando...' : 'Registrar y Seleccionar'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ============ MODAL: Cliente existente + nueva moto ============ */}
+      <Modal
+        isOpen={showExistingClientModal}
+        onClose={handleCloseExistingModal}
+        title="Asociar nueva moto a cliente existente"
+      >
+        <form onSubmit={handleExistingClientBike} onClick={(e) => e.stopPropagation()}>
+          {existingBikeError && <div className="alert alert-error">{existingBikeError}</div>}
+
+          {/* Seleccionar cliente */}
+          <h4 className="modal-section-title">Seleccionar Cliente</h4>
+          <div className="form-group">
+            <input
+              className="form-control"
+              type="text"
+              placeholder="Buscar por nombre, telefono o email..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+            />
+          </div>
+
+          {clientsLoading ? (
+            <p className="modal-loading">Cargando clientes...</p>
+          ) : (
+            <div className="existing-clients-list">
+              {filteredClients.length === 0 ? (
+                <p className="no-clients-msg">No se encontraron clientes</p>
+              ) : (
+                filteredClients.map((client) => (
+                  <div
+                    key={client.id}
+                    className={`existing-client-item${selectedClient?.id === client.id ? ' selected' : ''}`}
+                    onClick={() => setSelectedClient(client)}
+                  >
+                    <div className="ec-avatar">
+                      {client.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="ec-info">
+                      <span className="ec-name">{client.name}</span>
+                      {client.phone && <span className="ec-detail">{client.phone}</span>}
+                      {client.email && <span className="ec-detail">{client.email}</span>}
+                    </div>
+                    {selectedClient?.id === client.id && (
+                      <span className="ec-check">✓</span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Datos de la nueva moto */}
+          {selectedClient && (
+            <>
+              <h4 className="modal-section-title" style={{ marginTop: '20px' }}>
+                Nueva Moto para <strong>{selectedClient.name}</strong>
+              </h4>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Placa *</label>
+                  <input
+                    className="form-control"
+                    type="text"
+                    placeholder="ABC123"
+                    value={existingBikeForm.bikePlaca}
+                    onChange={(e) => setExistingBikeForm(p => ({ ...p, bikePlaca: e.target.value.toUpperCase() }))}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Marca *</label>
+                  <input
+                    className="form-control"
+                    type="text"
+                    placeholder="Yamaha, Honda..."
+                    value={existingBikeForm.bikeBrand}
+                    onChange={(e) => setExistingBikeForm(p => ({ ...p, bikeBrand: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Modelo *</label>
+                  <input
+                    className="form-control"
+                    type="text"
+                    placeholder="FZ 2.0, CB 160..."
+                    value={existingBikeForm.bikeModel}
+                    onChange={(e) => setExistingBikeForm(p => ({ ...p, bikeModel: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Cilindraje</label>
+                  <input
+                    className="form-control"
+                    type="number"
+                    placeholder="150"
+                    value={existingBikeForm.bikeCylinder}
+                    onChange={(e) => setExistingBikeForm(p => ({ ...p, bikeCylinder: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleCloseExistingModal}
             >
               Cancelar
             </button>
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={registerLoading}
+              disabled={existingBikeLoading || !selectedClient}
             >
-              {registerLoading ? 'Registrando...' : 'Registrar y Seleccionar'}
+              {existingBikeLoading ? 'Registrando...' : 'Registrar Moto y Seleccionar'}
             </button>
           </div>
         </form>

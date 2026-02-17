@@ -17,10 +17,7 @@ const Client = sequelize.define('Client', {
   },
   phone: {
     type: DataTypes.STRING(20),
-    allowNull: false,
-    validate: {
-      notEmpty: { msg: 'El telefono es obligatorio.' },
-    },
+    allowNull: true,
   },
   email: {
     type: DataTypes.STRING(100),
@@ -31,6 +28,13 @@ const Client = sequelize.define('Client', {
   },
 }, {
   tableName: 'clients',
+  indexes: [
+    {
+      unique: true,
+      fields: ['name'],
+      name: 'clients_name_unique',
+    },
+  ],
 });
 
 export default Client;

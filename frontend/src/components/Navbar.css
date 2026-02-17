@@ -1,91 +1,75 @@
+/* ============================================
+   Navbar Principal
+   ============================================ */
+
 .navbar {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .navbar-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 16px;
-  height: 64px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 64px;
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--color-primary);
-  font-weight: 700;
   font-size: 18px;
+  font-weight: 700;
+  color: #fff;
   text-decoration: none;
+  transition: opacity 0.2s;
 }
 
 .navbar-brand:hover {
-  text-decoration: none;
-}
-
-.navbar-brand svg {
-  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
-.navbar-link {
+.nav-link {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--color-text-secondary);
-  border-radius: var(--radius-md);
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.navbar-link:hover {
-  color: var(--color-text);
-  background: var(--color-bg);
-  text-decoration: none;
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
 
-.navbar-link.active {
-  color: var(--color-primary);
-  background: var(--color-primary-light);
+.nav-link.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
-.navbar-link-cta {
-  background: var(--color-primary);
-  color: #ffffff;
-  margin-left: 8px;
+.nav-link.btn-new {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
-.navbar-link-cta:hover {
-  background: var(--color-primary-dark);
-  color: #ffffff;
-}
-
-@media (max-width: 600px) {
-  .navbar-brand-text {
-    display: none;
-  }
-
-  .navbar-link span {
-    display: none;
-  }
-
-  .navbar-link {
-    padding: 8px 12px;
-  }
-}
+.nav-link.btn-new:hover {
+  background: rgba(255, 255, 255, 0.3)
+};

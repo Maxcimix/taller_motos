@@ -6,8 +6,10 @@
 }
 
 .main-content {
-  flex: 1;
-  padding: 24px 16px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  min-height: calc(100vh - 64px);
 }
 
 .container {
@@ -241,7 +243,7 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
   .main-content {
-    padding: 16px 12px 32px;
+    padding: 20px 16px;
   }
 
   .card-header {
