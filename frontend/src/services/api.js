@@ -1,9 +1,7 @@
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
 
-// Obtener token almacenado
 const getToken = () => localStorage.getItem("token");
 
-// Helper para headers con autenticacion
 const authHeaders = () => {
   const token = getToken();
   return {
@@ -12,7 +10,6 @@ const authHeaders = () => {
   };
 };
 
-// Helper generico para peticiones
 const request = async (endpoint, options = {}) => {
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -20,7 +17,6 @@ const request = async (endpoint, options = {}) => {
   });
 
   if (res.status === 401) {
-    // Token expirado o invalido -> cerrar sesion
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     window.location.href = "/login";
@@ -49,42 +45,57 @@ export const authAPI = {
 
 // ============ USERS ============
 export const usersAPI = {
-  getAll: () => request("/users"),
-  getById: (id) => request(`/users/${id}`),
-  updateRole: (id, role) =>
-    request(`/users/${id}/role`, {
-      method: "PATCH",
-      body: JSON.stringify({ role }),
-    }),
-  toggleActive: (id) =>
-    request(`/users/${id}/toggle-active`, { method: "PATCH" }),
+  getAll:       ()         => request("/users"),
+  getById:      (id)       => request(`/users/${id}`),
+  updateRole:   (id, role) => request(`/users/${id}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  }),
+  toggleActive: (id)       => request(`/users/${id}/toggle-active`, { method: "PATCH" }),
 };
 
 // ============ CLIENTS ============
 export const clientsAPI = {
-  getAll: () => request("/clients"),
-  search: (query) => request(`/clients/search?q=${encodeURIComponent(query)}`),
-  create: (data) =>
-    request("/clients", { method: "POST", body: JSON.stringify(data) }),
+  getAll:  ()      => request("/clients"),
+  search:  (query) => request(`/clients/search?q=${encodeURIComponent(query)}`),
+  create:  (data)  => request("/clients", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
 };
 
-// ============ BIKES ============
-export const bikesAPI = {
-  getAll: (plate = "") =>
-    request(`/bikes${plate ? `?plate=${encodeURIComponent(plate)}` : ""}`),
+// ============ VEHICLES (reemplaza bikesAPI) ============
+export const vehiclesAPI = {
+  // Listar vehiculos con filtros opcionales de placa y tipo
+  getAll: ({ plate = "", type_vehicle = "" } = {}) => {
+    const params = new URLSearchParams();
+    if (plate)        params.append("plate", plate);
+    if (type_vehicle) params.append("type_vehicle", type_vehicle);
+    const qs = params.toString();
+    return request(`/vehicles${qs ? `?${qs}` : ""}`);
+  },
 
-  getByClient: (clientId) => request(`/bikes/client/${clientId}`),
+  // Obtener por ID
+  getById: (id) => request(`/vehicles/${id}`),
 
-  create: (data) =>
-    request("/bikes", { method: "POST", body: JSON.stringify(data) }),
+  // Obtener vehiculos de un cliente
+  getByClient: (clientId) => request(`/vehicles/client/${clientId}`),
+
+  // Crear vehiculo
+  create: (data) => request("/vehicles", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+
+  // Actualizar vehiculo (horas, datos, etc.)
+  update: (id, data) => request(`/vehicles/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  }),
 };
 
-/*export const bikesAPI = {
-  getAll: () => request("/bikes"),
-  getByClient: (clientId) => request(`/bikes/client/${clientId}`),
-  create: (data) =>
-    request("/bikes", { method: "POST", body: JSON.stringify(data) }),
-}; */
+// Alias para compatibilidad con codigo antiguo que use bikesAPI
+export const bikesAPI = vehiclesAPI;
 
 // ============ WORK ORDERS ============
 export const workOrdersAPI = {
@@ -92,20 +103,21 @@ export const workOrdersAPI = {
     const query = new URLSearchParams(params).toString();
     return request(`/work-orders${query ? `?${query}` : ""}`);
   },
-  getById: (id) => request(`/work-orders/${id}`),
-  create: (data) =>
-    request("/work-orders", { method: "POST", body: JSON.stringify(data) }),
-  updateStatus: (id, toStatus, note = "") =>
-    request(`/work-orders/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ toStatus, note }),
-    }),
-  addItem: (id, data) =>
-    request(`/work-orders/${id}/items`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-  deleteItem: (id, itemId) =>
-    request(`/work-orders/${id}/items/${itemId}`, { method: "DELETE" }),
-  getHistory: (id, page = 1) => request(`/work-orders/${id}/history?page=${page}`),
+  getById:      (id)              => request(`/work-orders/${id}`),
+  create:       (data)            => request("/work-orders", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+  updateStatus: (id, toStatus, note = "") => request(`/work-orders/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ toStatus, note }),
+  }),
+  addItem:      (id, data)        => request(`/work-orders/${id}/items`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  }),
+  deleteItem:   (id, itemId)      => request(`/work-orders/${id}/items/${itemId}`, {
+    method: "DELETE",
+  }),
+  getHistory:   (id, page = 1)   => request(`/work-orders/${id}/history?page=${page}`),
 };

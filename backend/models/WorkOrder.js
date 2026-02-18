@@ -25,11 +25,11 @@ const WorkOrder = sequelize.define('WorkOrder', {
     primaryKey: true,
     autoIncrement: true,
   },
-  moto_id: {
+  vehicle_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'bikes',
+      model: 'vehicles',
       key: 'id',
     },
   },

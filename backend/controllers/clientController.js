@@ -1,41 +1,46 @@
 import { Op } from 'sequelize';
-import { Client, Bike } from '../models/index.js';
+import { Client, Vehicle } from '../models/index.js';
 
 export const createClient = async (req, res, next) => {
   try {
     const { name, phone, email } = req.body;
 
-    // Validacion manual: nombre obligatorio
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'El nombre del cliente es obligatorio.' });
     }
 
-    // Verificar si ya existe un cliente con el mismo nombre (case-insensitive)
+    // Buscar si ya existe un cliente con ese nombre
     const existing = await Client.findOne({
       where: { name: { [Op.like]: name.trim() } },
     });
 
+    // Si ya existe, devolver el cliente existente con su ID original
     if (existing) {
-      return res.status(409).json({
-        error: `Ya existe un cliente registrado con el nombre "${existing.name}". ID: ${existing.id}.`,
+      return res.status(200).json({
+        ...existing.toJSON(),
+        _found: true,
       });
     }
 
+    // Si no existe, crear el cliente nuevo
     const client = await Client.create({
       name: name.trim(),
       phone: phone?.trim() || null,
       email: email?.trim() || null,
     });
 
-    return res.status(201).json(client);
+    return res.status(201).json({
+      ...client.toJSON(),
+      _found: false,
+    });
+
   } catch (error) {
-    // Capturar error de unique constraint de Sequelize/MySQL por si acaso
     if (
       error.name === 'SequelizeUniqueConstraintError' ||
       error.name === 'SequelizeValidationError'
     ) {
-      const msg = error.errors?.[0]?.message || 'Ya existe un cliente con ese nombre.';
-      return res.status(409).json({ error: msg });
+      const msg = error.errors?.[0]?.message || 'Error de validacion.';
+      return res.status(400).json({ error: msg });
     }
     next(error);
   }
@@ -56,7 +61,11 @@ export const getClients = async (req, res, next) => {
 
     const clients = await Client.findAll({
       where,
-      include: [{ model: Bike, as: 'bikes', attributes: ['id', 'placa', 'brand', 'model'] }],
+      include: [{
+        model: Vehicle,
+        as: 'vehicles',
+        attributes: ['id', 'plate', 'brand', 'model', 'type_vehicle'],
+      }],
       order: [['created_at', 'DESC']],
     });
 
@@ -69,7 +78,10 @@ export const getClients = async (req, res, next) => {
 export const getClientById = async (req, res, next) => {
   try {
     const client = await Client.findByPk(req.params.id, {
-      include: [{ model: Bike, as: 'bikes' }],
+      include: [{
+        model: Vehicle,
+        as: 'vehicles',
+      }],
     });
 
     if (!client) {

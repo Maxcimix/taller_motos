@@ -20,12 +20,10 @@ function WorkOrderList() {
   const [showClientList, setShowClientList] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
 
-  // Cargar todos los clientes al iniciar
   useEffect(() => {
     const fetchClients = async () => {
       try {
         const data = await clientsAPI.getAll();
-        // Manejar si viene como array directo o dentro de un objeto
         const list = Array.isArray(data) ? data : (data?.clients || data?.data || []);
         setClients(list);
       } catch (err) {
@@ -46,11 +44,11 @@ function WorkOrderList() {
         pageSize: 10,
       });
 
-      // Filtrar por cliente en el frontend
+      // Filtrar por cliente en el frontend usando vehicle.client
       let filteredData = res.data || [];
       if (filters.client) {
         filteredData = filteredData.filter((order) =>
-          order.bike?.client?.name
+          order.vehicle?.client?.name
             ?.toLowerCase()
             .includes(filters.client.toLowerCase())
         );
@@ -97,12 +95,20 @@ function WorkOrderList() {
 
   const hasActiveFilters = filters.status || filters.plate || filters.client;
 
-  // Filtrar clientes dentro del panel lateral
   const filteredClients = clients.filter((c) =>
     c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
     c.phone?.includes(clientSearch) ||
     c.email?.toLowerCase().includes(clientSearch.toLowerCase())
   );
+
+  // Label del tipo de vehiculo
+  const vehicleTypeLabel = (type) => {
+    const labels = {
+      MOTORCYCLE: '🏍️', CAR: '🚗', TRUCK: '🚛',
+      VAN: '🚐', BUS: '🚌', OTHER: '🚘',
+    };
+    return labels[type] || '';
+  };
 
   return (
     <div className="work-order-list">
@@ -138,11 +144,7 @@ function WorkOrderList() {
       </div>
 
       <div className={`wol-layout${showClientList ? ' with-sidebar' : ''}`}>
-
-        {/* Columna principal */}
         <div className="wol-main">
-
-          {/* Filtros */}
           <div className="card filters-card">
             <div className="filters-row">
               <div className="filter-group">
@@ -165,7 +167,7 @@ function WorkOrderList() {
                   id="filter-plate"
                   className="form-control"
                   type="text"
-                  placeholder="Buscar por placa..."
+                  placeholder="Buscar por plate..."
                   value={filters.plate}
                   onChange={(e) => handleFilterChange('plate', e.target.value)}
                 />
@@ -183,7 +185,6 @@ function WorkOrderList() {
               </div>
             </div>
 
-            {/* Etiquetas de filtros activos */}
             {hasActiveFilters && (
               <div className="filters-active">
                 <span className="filter-active-label">Filtros activos:</span>
@@ -212,7 +213,6 @@ function WorkOrderList() {
             )}
           </div>
 
-          {/* Tabla de ordenes */}
           <div className="card">
             {loading ? (
               <LoadingSpinner text="Cargando ordenes..." />
@@ -245,6 +245,7 @@ function WorkOrderList() {
                       <tr>
                         <th>ID</th>
                         <th>Placa</th>
+                        <th>Tipo</th>
                         <th>Cliente</th>
                         <th>Estado</th>
                         <th>Fecha</th>
@@ -256,14 +257,15 @@ function WorkOrderList() {
                       {orders.map((order) => (
                         <tr key={order.id}>
                           <td><span className="order-id">#{order.id}</span></td>
-                          <td><span className="plate-badge">{order.bike?.placa || '-'}</span></td>
+                          <td><span className="plate-badge">{order.vehicle?.plate || '-'}</span></td>
+                          <td>{vehicleTypeLabel(order.vehicle?.type_vehicle)}</td>
                           <td>
                             <span
                               className="client-name-link"
-                              onClick={() => handleFilterChange('client', order.bike?.client?.name || '')}
+                              onClick={() => handleFilterChange('client', order.vehicle?.client?.name || '')}
                               title="Clic para filtrar por este cliente"
                             >
-                              {order.bike?.client?.name || '-'}
+                              {order.vehicle?.client?.name || '-'}
                             </span>
                           </td>
                           <td><StatusBadge status={order.status} /></td>
@@ -289,7 +291,6 @@ function WorkOrderList() {
           </div>
         </div>
 
-        {/* Panel lateral de clientes */}
         {showClientList && (
           <div className="wol-sidebar">
             <div className="card client-panel">
@@ -303,7 +304,6 @@ function WorkOrderList() {
                 </h3>
                 <span className="client-count-badge">{clients.length}</span>
               </div>
-
               <div className="client-panel-search">
                 <input
                   className="form-control"
@@ -313,7 +313,6 @@ function WorkOrderList() {
                   onChange={(e) => setClientSearch(e.target.value)}
                 />
               </div>
-
               <div className="client-list">
                 {filteredClients.length === 0 ? (
                   <p className="client-empty">No se encontraron clientes</p>
@@ -322,25 +321,17 @@ function WorkOrderList() {
                     <div
                       key={client.id}
                       className={`client-item${filters.client === client.name ? ' selected' : ''}`}
-                      onClick={() =>
-                        handleFilterChange('client', filters.client === client.name ? '' : client.name)
-                      }
+                      onClick={() => handleFilterChange('client', filters.client === client.name ? '' : client.name)}
                       title="Clic para filtrar ordenes de este cliente"
                     >
-                      <div className="client-avatar">
-                        {client.name?.charAt(0).toUpperCase()}
-                      </div>
+                      <div className="client-avatar">{client.name?.charAt(0).toUpperCase()}</div>
                       <div className="client-info">
                         <span className="client-item-name">{client.name}</span>
-                        {client.phone && (
-                          <span className="client-item-phone">{client.phone}</span>
-                        )}
-                        {client.email && (
-                          <span className="client-item-email">{client.email}</span>
-                        )}
+                        {client.phone && <span className="client-item-phone">{client.phone}</span>}
+                        {client.email && <span className="client-item-email">{client.email}</span>}
                       </div>
                       {filters.client === client.name && (
-                        <span className="client-active-indicator">ok</span>
+                        <span className="client-active-indicator">✓</span>
                       )}
                     </div>
                   ))

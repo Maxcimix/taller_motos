@@ -7,46 +7,43 @@ import './WorkOrderDetail.css';
 import { useAuth } from '../context/AuthContext';
 
 const STATUS_TRANSITIONS = {
-  RECIBIDA: ['DIAGNOSTICO', 'CANCELADA'],
+  RECIBIDA:   ['DIAGNOSTICO', 'CANCELADA'],
   DIAGNOSTICO: ['EN_PROCESO', 'CANCELADA'],
-  EN_PROCESO: ['LISTA', 'CANCELADA'],
-  LISTA: ['ENTREGADA', 'CANCELADA'],
-  ENTREGADA: [],
-  CANCELADA: [],
+  EN_PROCESO:  ['LISTA', 'CANCELADA'],
+  LISTA:       ['ENTREGADA', 'CANCELADA'],
+  ENTREGADA:   [],
+  CANCELADA:   [],
 };
 
-const STATUS_LABELS = {
-  RECIBIDA: 'Recibida',
-  DIAGNOSTICO: 'Diagnostico',
-  EN_PROCESO: 'En Proceso',
-  LISTA: 'Lista',
-  ENTREGADA: 'Entregada',
-  CANCELADA: 'Cancelada',
+const VEHICLE_TYPE_LABELS = {
+  MOTORCYCLE: 'Motocicleta',
+  CAR:        'Automovil',
+  TRUCK:      'Camion',
+  VAN:        'Van',
+  BUS:        'Bus',
+  OTHER:      'Otro',
 };
 
 function WorkOrderDetail() {
   const { id } = useParams();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { user } = useAuth();
+  const [order, setOrder]           = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
-  const [statusError, setStatusError] = useState('');
+  const [statusError, setStatusError]     = useState('');
 
   const [showItemForm, setShowItemForm] = useState(false);
   const [itemForm, setItemForm] = useState({
-    type: 'MANO_OBRA',
-    description: '',
-    count: 1,
-    unit_value: '',
+    type: 'MANO_OBRA', description: '', count: 1, unit_value: '',
   });
-  const [itemLoading, setItemLoading] = useState(false);
-  const [itemError, setItemError] = useState('');
+  const [itemLoading, setItemLoading]   = useState(false);
+  const [itemError, setItemError]       = useState('');
   const [deleteLoading, setDeleteLoading] = useState(null);
 
-
-  const [history, setHistory] = useState([]);
+  const [history, setHistory]               = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPage, setHistoryPage]       = useState(1);
   const [historyPagination, setHistoryPagination] = useState(null);
 
   const fetchOrder = useCallback(async () => {
@@ -59,8 +56,6 @@ function WorkOrderDetail() {
       setLoading(false);
     }
   }, [id]);
-
-
 
   const fetchHistory = useCallback(async (page = 1) => {
     setHistoryLoading(true);
@@ -82,7 +77,6 @@ function WorkOrderDetail() {
     fetchHistory();
   }, [fetchOrder, fetchHistory]);
 
-  // --- MODIFICADO: ahora pide nota y recarga historial ---
   const handleStatusChange = async (newStatus) => {
     const note = window.prompt('Nota del cambio de estado (opcional):') || '';
     setStatusLoading(true);
@@ -104,10 +98,10 @@ function WorkOrderDetail() {
     setItemError('');
     try {
       await workOrdersAPI.addItem(id, {
-        type: itemForm.type,
+        type:        itemForm.type,
         description: itemForm.description,
-        count: parseInt(itemForm.count),
-        unit_value: parseFloat(itemForm.unit_value),
+        count:       parseInt(itemForm.count),
+        unit_value:  parseFloat(itemForm.unit_value),
       });
       setItemForm({ type: 'MANO_OBRA', description: '', count: 1, unit_value: '' });
       setShowItemForm(false);
@@ -122,6 +116,7 @@ function WorkOrderDetail() {
   const handleDeleteItem = async (itemId) => {
     if (!window.confirm('Esta seguro de eliminar este item?')) return;
     setDeleteLoading(itemId);
+    setItemError('');
     try {
       await workOrdersAPI.deleteItem(id, itemId);
       await fetchOrder();
@@ -138,28 +133,21 @@ function WorkOrderDetail() {
     return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // --- NUEVO: formateo de fecha/hora para historial ---
   const formatDateTime = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
+      style: 'currency', currency: 'COP', minimumFractionDigits: 0,
     }).format(value || 0);
   };
 
   if (loading) return <LoadingSpinner text="Cargando orden..." />;
-
   if (error) {
     return (
       <div className="detail-error">
@@ -168,11 +156,14 @@ function WorkOrderDetail() {
       </div>
     );
   }
-
   if (!order) return null;
 
   const allowedTransitions = STATUS_TRANSITIONS[order.status] || [];
   const isEditable = !['ENTREGADA', 'CANCELADA'].includes(order.status);
+
+  // Usar vehicle en lugar de bike
+  const vehicle = order.vehicle;
+  const client  = vehicle?.client;
 
   return (
     <div className="work-order-detail">
@@ -206,21 +197,33 @@ function WorkOrderDetail() {
               <div className="info-item">
                 <span className="info-label">Placa</span>
                 <span className="info-value">
-                  <span className="plate-badge">{order.bike?.placa}</span>
+                  <span className="plate-badge">{vehicle?.plate || '-'}</span>
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Tipo</span>
+                <span className="info-value">
+                  {VEHICLE_TYPE_LABELS[vehicle?.type_vehicle] || vehicle?.type_vehicle || '-'}
                 </span>
               </div>
               <div className="info-item">
                 <span className="info-label">Marca</span>
-                <span className="info-value">{order.bike?.brand}</span>
+                <span className="info-value">{vehicle?.brand || '-'}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Modelo</span>
-                <span className="info-value">{order.bike?.model}</span>
+                <span className="info-value">{vehicle?.model || '-'}</span>
               </div>
-              {order.bike?.cylinder && (
+              {vehicle?.cylinder && (
                 <div className="info-item">
                   <span className="info-label">Cilindraje</span>
-                  <span className="info-value">{order.bike.cylinder}cc</span>
+                  <span className="info-value">{vehicle.cylinder}cc</span>
+                </div>
+              )}
+              {vehicle?.operating_hours !== undefined && vehicle?.operating_hours !== null && (
+                <div className="info-item">
+                  <span className="info-label">Horas de funcionamiento</span>
+                  <span className="info-value">{vehicle.operating_hours} hrs</span>
                 </div>
               )}
             </div>
@@ -236,16 +239,16 @@ function WorkOrderDetail() {
             <div className="detail-info-grid">
               <div className="info-item">
                 <span className="info-label">Nombre</span>
-                <span className="info-value">{order.bike?.client?.name}</span>
+                <span className="info-value">{client?.name || '-'}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Telefono</span>
-                <span className="info-value">{order.bike?.client?.phone}</span>
+                <span className="info-value">{client?.phone || '-'}</span>
               </div>
-              {order.bike?.client?.email && (
+              {client?.email && (
                 <div className="info-item">
                   <span className="info-label">Email</span>
-                  <span className="info-value">{order.bike.client.email}</span>
+                  <span className="info-value">{client.email}</span>
                 </div>
               )}
             </div>
@@ -259,58 +262,29 @@ function WorkOrderDetail() {
           <h2 className="card-title">Descripcion de la Falla</h2>
         </div>
         <div className="card-body">
-          <p className="fault-text">{order.fault_description}</p>
+          <p className="fault-description">{order.fault_description}</p>
         </div>
       </div>
 
       {/* Cambio de estado */}
-      {allowedTransitions.length > 0 && (
+      {isEditable && allowedTransitions.length > 0 && (
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Cambiar Estado</h2>
           </div>
           <div className="card-body">
-            <div className="status-flow">
-              {['RECIBIDA', 'DIAGNOSTICO', 'EN_PROCESO', 'LISTA', 'ENTREGADA'].map((s, i, arr) => {
-                const isCurrent = order.status === s;
-                const isPast = arr.indexOf(order.status) > i;
-                return (
-                  <React.Fragment key={s}>
-                    <div className={`status-step ${isCurrent ? 'current' : ''} ${isPast ? 'past' : ''}`}>
-                      <div className="status-dot" />
-                      <span className="status-step-label">{STATUS_LABELS[s]}</span>
-                    </div>
-                    {i < arr.length - 1 && (
-                      <div className={`status-connector ${isPast ? 'past' : ''}`} />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
             <div className="status-actions">
-              {allowedTransitions.filter(s => s !== 'CANCELADA').map((s) => (
+              {allowedTransitions.map((s) => (
                 <button
                   key={s}
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-secondary"
                   onClick={() => handleStatusChange(s)}
                   disabled={statusLoading}
+                  type="button"
                 >
-                  {statusLoading ? 'Actualizando...' : `Avanzar a ${STATUS_LABELS[s]}`}
+                  {statusLoading ? 'Cambiando...' : `→ ${s.replace('_', ' ')}`}
                 </button>
               ))}
-              {allowedTransitions.includes('CANCELADA') && (
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={() => {
-                    if (window.confirm('Esta seguro de cancelar esta orden?')) {
-                      handleStatusChange('CANCELADA');
-                    }
-                  }}
-                  disabled={statusLoading}
-                >
-                  Cancelar Orden
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -318,11 +292,12 @@ function WorkOrderDetail() {
 
       {/* Items de la orden */}
       <div className="card">
-        <div className="card-header">
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 className="card-title">Items de la Orden</h2>
           {isEditable && (
             <button
-              className="btn btn-sm btn-primary"
+              type="button"
+              className={`btn btn-sm ${showItemForm ? 'btn-secondary' : 'btn-primary'}`}
               onClick={() => setShowItemForm(!showItemForm)}
             >
               {showItemForm ? 'Cancelar' : 'Agregar Item'}
@@ -388,11 +363,7 @@ function WorkOrderDetail() {
                   />
                 </div>
                 <div className="form-group" style={{ justifyContent: 'flex-end' }}>
-                  <button
-                    type="submit"
-                    className="btn btn-success"
-                    disabled={itemLoading}
-                  >
+                  <button type="submit" className="btn btn-success" disabled={itemLoading}>
                     {itemLoading ? 'Agregando...' : 'Agregar'}
                   </button>
                 </div>
@@ -433,6 +404,7 @@ function WorkOrderDetail() {
                             className="btn btn-sm btn-danger"
                             onClick={() => handleDeleteItem(item.id)}
                             disabled={deleteLoading === item.id}
+                            type="button"
                           >
                             {deleteLoading === item.id ? '...' : 'Eliminar'}
                           </button>
@@ -456,6 +428,7 @@ function WorkOrderDetail() {
                 className="btn btn-primary btn-sm"
                 onClick={() => setShowItemForm(true)}
                 style={{ marginTop: '8px' }}
+                type="button"
               >
                 Agregar primer item
               </button>
@@ -464,7 +437,7 @@ function WorkOrderDetail() {
         )}
       </div>
 
-      {/* --- NUEVO: Historial de Cambios de Estado --- */}
+      {/* Historial de Cambios de Estado */}
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">Historial de Cambios de Estado</h2>
@@ -511,14 +484,13 @@ function WorkOrderDetail() {
                   </div>
                 ))}
               </div>
-
-              {/* Paginacion del historial */}
               {historyPagination && historyPagination.totalPages > 1 && (
                 <div className="history-pagination">
                   <button
                     className="btn btn-sm btn-secondary"
                     disabled={historyPage <= 1}
                     onClick={() => fetchHistory(historyPage - 1)}
+                    type="button"
                   >
                     Anterior
                   </button>
@@ -529,6 +501,7 @@ function WorkOrderDetail() {
                     className="btn btn-sm btn-secondary"
                     disabled={historyPage >= historyPagination.totalPages}
                     onClick={() => fetchHistory(historyPage + 1)}
+                    type="button"
                   >
                     Siguiente
                   </button>

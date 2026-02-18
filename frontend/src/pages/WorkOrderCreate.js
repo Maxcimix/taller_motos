@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { bikesAPI, clientsAPI, workOrdersAPI } from "../services/api";
+import { vehiclesAPI, clientsAPI, workOrdersAPI } from "../services/api";
 import Modal from '../components/Modal';
 import './WorkOrderCreate.css';
 
@@ -23,10 +23,12 @@ function WorkOrderCreate() {
     clientName: '',
     clientPhone: '',
     clientEmail: '',
-    bikePlaca: '',
+    bikePlate: '',
+    bikeType: 'MOTORCYCLE',
     bikeBrand: '',
     bikeModel: '',
     bikeCylinder: '',
+    bikeHours: '',
   });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState('');
@@ -37,7 +39,7 @@ function WorkOrderCreate() {
   const [clientSearch, setClientSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [existingBikeForm, setExistingBikeForm] = useState({
-    bikePlaca: '',
+    bikePlate: '',
     bikeBrand: '',
     bikeModel: '',
     bikeCylinder: '',
@@ -71,11 +73,11 @@ function WorkOrderCreate() {
     setError('');
     setSearchDone(false);
     try {
-      const bikes = await bikesAPI.getAll(plateSearch.trim());
-      setBikeResults(Array.isArray(bikes) ? bikes : []);
+      const vehicles = await vehiclesAPI.getAll({ plate: plateSearch.trim() });
+      setBikeResults(Array.isArray(vehicles) ? vehicles : []);
       setSearchDone(true);
-      if (Array.isArray(bikes) && bikes.length === 1) {
-        setSelectedBike(bikes[0]);
+      if (Array.isArray(vehicles) && vehicles.length === 1) {
+        setSelectedBike(vehicles[0]);
       }
     } catch (err) {
       setError(err.message);
@@ -100,7 +102,7 @@ function WorkOrderCreate() {
     setRegisterError('');
     setRegisterForm({
       clientName: '', clientPhone: '', clientEmail: '',
-      bikePlaca: '', bikeBrand: '', bikeModel: '', bikeCylinder: '',
+      bikePlate: '', bikeBrand: '', bikeModel: '', bikeCylinder: '',
     });
   };
 
@@ -109,10 +111,10 @@ function WorkOrderCreate() {
     setExistingBikeError('');
     setSelectedClient(null);
     setClientSearch('');
-    setExistingBikeForm({ bikePlaca: '', bikeBrand: '', bikeModel: '', bikeCylinder: '' });
+    setExistingBikeForm({ bikePlate: '', bikeBrand: '', bikeModel: '', bikeCylinder: '' });
   };
 
-  // Registrar nuevo cliente + moto
+  // Registrar nuevo cliente + moto (si el cliente ya existe, reutiliza su ID)
   const handleQuickRegister = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -120,23 +122,35 @@ function WorkOrderCreate() {
     setRegisterError('');
 
     try {
+      // El backend retorna el cliente existente si ya hay uno con ese nombre
       const clientRes = await clientsAPI.create({
         name: registerForm.clientName,
         phone: registerForm.clientPhone,
         email: registerForm.clientEmail || undefined,
       });
 
-      const bikeRes = await bikesAPI.create({
-        placa: registerForm.bikePlaca,
+      // Si el cliente ya existia, avisar al usuario pero continuar
+      if (clientRes._found) {
+        setRegisterError(
+          `El cliente "${clientRes.name}" ya existe (ID #${clientRes.id}). Se asociara la moto a este cliente.`
+        );
+        // Esperar un momento para que el usuario vea el aviso
+        await new Promise((r) => setTimeout(r, 1800));
+      }
+
+      const bikeRes = await vehiclesAPI.create({
+        plate: registerForm.bikePlate,
+        type_vehicle: registerForm.bikeType || 'MOTORCYCLE',
         brand: registerForm.bikeBrand,
         model: registerForm.bikeModel,
         cylinder: registerForm.bikeCylinder ? parseInt(registerForm.bikeCylinder) : undefined,
+        operating_hours: registerForm.bikeHours ? parseFloat(registerForm.bikeHours) : 0,
         client_id: clientRes.id,
       });
 
       const fullBike = { ...bikeRes, client: clientRes };
       setSelectedBike(fullBike);
-      setPlateSearch(registerForm.bikePlaca);
+      setPlateSearch(registerForm.bikePlate);
       handleCloseRegisterModal();
     } catch (err) {
       setRegisterError(err.message || 'Error al registrar. Verifica los datos.');
@@ -159,17 +173,19 @@ function WorkOrderCreate() {
     setExistingBikeError('');
 
     try {
-      const bikeRes = await bikesAPI.create({
-        placa: existingBikeForm.bikePlaca,
+      const bikeRes = await vehiclesAPI.create({
+        plate: existingBikeForm.bikePlate,
+        type_vehicle: existingBikeForm.bikeType || 'MOTORCYCLE',
         brand: existingBikeForm.bikeBrand,
         model: existingBikeForm.bikeModel,
         cylinder: existingBikeForm.bikeCylinder ? parseInt(existingBikeForm.bikeCylinder) : undefined,
+        operating_hours: existingBikeForm.bikeHours ? parseFloat(existingBikeForm.bikeHours) : 0,
         client_id: selectedClient.id,
       });
 
       const fullBike = { ...bikeRes, client: selectedClient };
       setSelectedBike(fullBike);
-      setPlateSearch(existingBikeForm.bikePlaca);
+      setPlateSearch(existingBikeForm.bikePlate);
       handleCloseExistingModal();
     } catch (err) {
       setExistingBikeError(err.message || 'Error al registrar la moto.');
@@ -196,7 +212,7 @@ function WorkOrderCreate() {
 
     try {
       const order = await workOrdersAPI.create({
-        moto_id: selectedBike.id,
+        vehicle_id: selectedBike.id,
         entry_date: entryDate,
         fault_description: faultDescription,
       });
@@ -271,7 +287,7 @@ function WorkOrderCreate() {
                     type="button"
                     className="btn btn-new-client"
                     onClick={() => {
-                      setRegisterForm((prev) => ({ ...prev, bikePlaca: plateSearch }));
+                      setRegisterForm((prev) => ({ ...prev, bikePlate: plateSearch }));
                       setShowRegisterModal(true);
                     }}
                   >
@@ -281,7 +297,7 @@ function WorkOrderCreate() {
                     type="button"
                     className="btn btn-existing-client"
                     onClick={() => {
-                      setExistingBikeForm((prev) => ({ ...prev, bikePlaca: plateSearch }));
+                      setExistingBikeForm((prev) => ({ ...prev, bikePlate: plateSearch }));
                       setShowExistingClientModal(true);
                     }}
                   >
@@ -301,7 +317,7 @@ function WorkOrderCreate() {
                     className="bike-result-item"
                     onClick={() => setSelectedBike(bike)}
                   >
-                    <span className="plate-badge">{bike.placa}</span>
+                    <span className="plate-badge">{vehicle.plate}</span>
                     <span>{bike.brand} {bike.model}</span>
                     <span className="result-client">{bike.client?.name}</span>
                   </button>
@@ -329,7 +345,7 @@ function WorkOrderCreate() {
                 <div className="selected-bike-info">
                   <div className="info-item">
                     <span className="info-label">Placa</span>
-                    <span className="info-value plate-badge">{selectedBike.placa}</span>
+                    <span className="info-value plate-badge">{selectedBike.plate}</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Marca/Modelo</span>
@@ -432,7 +448,11 @@ function WorkOrderCreate() {
         title="Registro rapido - Cliente y Moto"
       >
         <form onSubmit={handleQuickRegister} onClick={(e) => e.stopPropagation()}>
-          {registerError && <div className="alert alert-error">{registerError}</div>}
+          {registerError && (
+            <div className={`alert ${registerError.includes('ya existe') ? 'alert-info' : 'alert-error'}`}>
+              {registerError}
+            </div>
+          )}
 
           <h4 className="modal-section-title">Datos del Cliente</h4>
           <div className="form-group">
@@ -471,7 +491,7 @@ function WorkOrderCreate() {
             </div>
           </div>
 
-          <h4 className="modal-section-title">Datos de la Moto</h4>
+          <h4 className="modal-section-title">Datos del vehiculo</h4>
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Placa *</label>
@@ -479,11 +499,28 @@ function WorkOrderCreate() {
                 className="form-control"
                 type="text"
                 placeholder="ABC123"
-                value={registerForm.bikePlaca}
-                onChange={(e) => handleRegisterChange('bikePlaca', e.target.value.toUpperCase())}
+                value={registerForm.bikePlate}
+                onChange={(e) => handleRegisterChange('bikePlate', e.target.value.toUpperCase())}
                 required
               />
             </div>
+            <div className="form-group">
+              <label className="form-label">Tipo vehiculo *</label>
+              <select
+                className="form-control"
+                value={registerForm.bikeType}
+                onChange={(e) => handleRegisterChange('bikeType', e.target.value)}
+              >
+                <option value="MOTORCYCLE">Motorcycle</option>
+                <option value="CAR">Car</option>
+                <option value="TRUCK">Truck</option>
+                <option value="VAN">Van</option>
+                <option value="BUS">Bus</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
             <div className="form-group">
               <label className="form-label">Marca *</label>
               <input
@@ -509,13 +546,25 @@ function WorkOrderCreate() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Cilindraje</label>
+              <label className="form-label">Cilindraje (cc)</label>
               <input
                 className="form-control"
                 type="number"
                 placeholder="150"
                 value={registerForm.bikeCylinder}
                 onChange={(e) => handleRegisterChange('bikeCylinder', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Operating Hours</label>
+              <input
+                className="form-control"
+                type="number"
+                placeholder="0"
+                step="0.1"
+                min="0"
+                value={registerForm.bikeHours}
+                onChange={(e) => handleRegisterChange('bikeHours', e.target.value)}
               />
             </div>
           </div>
@@ -599,13 +648,13 @@ function WorkOrderCreate() {
                     className="form-control"
                     type="text"
                     placeholder="ABC123"
-                    value={existingBikeForm.bikePlaca}
-                    onChange={(e) => setExistingBikeForm(p => ({ ...p, bikePlaca: e.target.value.toUpperCase() }))}
+                    value={existingBikeForm.bikePlate}
+                    onChange={(e) => setExistingBikeForm(p => ({ ...p, bikePlate: e.target.value.toUpperCase() }))}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Marca *</label>
+                  <label className="form-label">Brand *</label>
                   <input
                     className="form-control"
                     type="text"

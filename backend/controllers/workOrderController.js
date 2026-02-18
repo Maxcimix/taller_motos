@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import { WorkOrder, OrderItem, Bike, Client, StatusHistory, User } from '../models/index.js';
+import { WorkOrder, OrderItem, Vehicle, Client, StatusHistory, User } from '../models/index.js';
 import { STATUS_TRANSITIONS } from '../models/WorkOrder.js';
 import { createError } from '../middleware/errorHandler.js';
 
@@ -26,16 +26,15 @@ const recalculateTotal = async (workOrderId, transaction = null) => {
 
 export const createWorkOrder = async (req, res, next) => {
   try {
-    const { moto_id, entry_date, fault_description } = req.body;
+    const { vehicle_id, entry_date, fault_description } = req.body;
 
-
-    const bike = await Bike.findByPk(moto_id);
-    if (!bike) {
-      throw createError(400, 'La moto especificada no existe. Debe registrar la moto primero.');
+    const vehicle = await Vehicle.findByPk(vehicle_id);
+    if (!vehicle) {
+      throw createError(400, 'The specified vehicle does not exist. Please register the vehicle first.');
     }
 
     const workOrder = await WorkOrder.create({
-      moto_id,
+      vehicle_id,
       entry_date: entry_date || new Date().toISOString().split('T')[0],
       fault_description,
       status: 'RECIBIDA',
@@ -51,28 +50,28 @@ export const createWorkOrder = async (req, res, next) => {
 
 export const getWorkOrders = async (req, res, next) => {
   try {
-    const { status, plate, page = 1, pageSize = 10 } = req.query;
+    const { status, placa, page = 1, pageSize = 10 } = req.query;
     const where = {};
-    const bikeWhere = {};
+    const vehicleWhere = {};
 
     if (status) {
       where.status = status;
     }
 
-    if (plate) {
-      bikeWhere.placa = { [Op.like]: `%${plate}%` };
+    if (placa) {
+      vehicleWhere.placa = { [Op.like]: `%${placa.toUpperCase()}%` };
     }
 
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
-    const limit = parseInt(pageSize);
+    const limit  = parseInt(pageSize);
 
     const { count, rows } = await WorkOrder.findAndCountAll({
       where,
       include: [
         {
-          model: Bike,
-          as: 'bike',
-          where: Object.keys(bikeWhere).length > 0 ? bikeWhere : undefined,
+          model: Vehicle,
+          as: 'vehicle',
+          where: Object.keys(vehicleWhere).length > 0 ? vehicleWhere : undefined,
           include: [{ model: Client, as: 'client', attributes: ['id', 'name', 'phone'] }],
         },
       ],
@@ -102,8 +101,8 @@ export const getWorkOrderById = async (req, res, next) => {
     const workOrder = await WorkOrder.findByPk(req.params.id, {
       include: [
         {
-          model: Bike,
-          as: 'bike',
+          model: Vehicle,
+          as: 'vehicle',
           include: [{ model: Client, as: 'client' }],
         },
         {
@@ -193,6 +192,7 @@ export const updateWorkOrderStatus = async (req, res, next) => {
   }
 };
 
+
 export const getStatusHistory = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -204,7 +204,7 @@ export const getStatusHistory = async (req, res, next) => {
     }
 
     const offset = (parseInt(page) - 1) * parseInt(pageSize);
-    const limit = parseInt(pageSize);
+    const limit  = parseInt(pageSize);
 
     const { count, rows } = await StatusHistory.findAndCountAll({
       where: { work_order_id: id },
@@ -245,7 +245,6 @@ export const addOrderItem = async (req, res, next) => {
       throw createError(404, 'Orden de trabajo no encontrada.');
     }
 
-
     if (['ENTREGADA', 'CANCELADA'].includes(workOrder.status)) {
       await t.rollback();
       throw createError(400, `No se pueden agregar items a una orden con estado "${workOrder.status}".`);
@@ -278,7 +277,6 @@ export const deleteOrderItem = async (req, res, next) => {
     }
 
     const workOrder = await WorkOrder.findByPk(item.work_order_id, { transaction: t });
-
 
     if (['ENTREGADA', 'CANCELADA'].includes(workOrder.status)) {
       await t.rollback();

@@ -30,7 +30,7 @@ function Login() {
     <div className="login-container">
       <div className="login-card">
         <h1 className="login-title">PAVAS S.A.S</h1>
-        <p className="login-subtitle">Taller de Motos - Sistema de Gestion</p>
+        <p className="login-subtitle">Taller de Mecanica - Sistema de Gestion</p>
 
         <form onSubmit={handleSubmit} className="login-form">
           {error && <div className="alert alert-error">{error}</div>}

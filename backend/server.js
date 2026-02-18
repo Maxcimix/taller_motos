@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { sequelize } from './config/database.js';
 import clientRoutes from './routes/clients.js';
-import bikeRoutes from './routes/bikes.js';
+import vehiclesRoutes from './routes/vehicles.js';
 import workOrderRoutes from './routes/workOrders.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -19,12 +19,12 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/clients', clientRoutes);
-app.use('/api/bikes', bikeRoutes);
+app.use('/api/vehicles', vehiclesRoutes);
 app.use('/api/work-orders', workOrderRoutes);
 
 // Ruta de salud
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'OK', message: 'Taller de Motos API funcionando correctamente' });
+  res.json({ status: 'OK', message: 'Taller de Mecanica API funcionando correctamente' });
 });
 
 // Middleware de errores (debe ir al final)
